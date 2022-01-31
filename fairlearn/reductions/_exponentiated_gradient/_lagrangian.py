@@ -186,18 +186,20 @@ class _Lagrangian:
         """
         classifier = self._call_oracle(lambda_vec)
 
-        def h(X, threshold = 0.5, predict_proba = False):
-            if predict_proba:
-                return classifier.predict_proba(X)[:,1]
-            else:
-                proba = classifier.predict_proba(X)[:,1]
-                pred = (proba > threshold).astype('int64')
+        def h(X, threshold=0.5, predict_proba=False):
+            if getattr(classifier, "predict_proba", None) is not None:
+                proba = classifier.predict_proba(X)[:, 1]
+                if predict_proba:
+                    return proba
+                else:
+                    pred = (proba > threshold).astype('int64')
 
-            # Some estimators return an output of the shape (num_preds, 1) - flatten such
-            # results
-            if getattr(pred, "flatten", None) is not None:
-                pred = pred.flatten()
-            return pred
+                    # Some estimators return an output of the shape (num_preds, 1) - flatten such
+                    # results
+                    if getattr(pred, "flatten", None) is not None:
+                        pred = pred.flatten()
+
+                    return pred
 
         h_error = self.obj.gamma(h)[0]
         h_gamma = self.constraints.gamma(h)
